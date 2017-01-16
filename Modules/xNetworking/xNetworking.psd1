@@ -26,10 +26,10 @@ CLRVersion = '4.0'
 # Functions to export from this module
 FunctionsToExport = '*'
 
+NestedModules = @('Modules\NetworkingDsc.Common\NetworkingDsc.Common.psm1','Modules\NetworkingDsc.ResourceHelper\NetworkingDsc.ResourceHelper.psm1','xNetworkAdapter.psm1')
+
 # Cmdlets to export from this module
 CmdletsToExport = '*'
-
-NestedModules = @( 'xNetworkAdapter.psm1')
 
 # Private data to pass to the module specified in RootModule/ModuleToProcess. This may also contain a PSData hashtable with additional module metadata used by PowerShell.
 PrivateData = @{

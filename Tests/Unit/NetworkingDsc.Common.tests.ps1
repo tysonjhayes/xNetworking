@@ -62,6 +62,143 @@ try
             }
         }
     }
+
+ Describe "NetworkingDsc.Common\Test-ResourceProperty" {
+
+            Mock Get-NetAdapter -MockWith { [PSObject]@{ Name = 'Ethernet' } }
+
+            Context 'invoking with bad interface alias' {
+
+                It 'should throw an InterfaceNotAvailable error' {
+                    $Splat = @{
+                        Address = '192.168.0.1'
+                        InterfaceAlias = 'NotReal'
+                        AddressFamily = 'IPv4'
+                    }
+
+                    $errorMessage = $($LocalizedData.InterfaceNotAvailableError) -f $Splat.InterfaceAlias
+
+                    Mock -CommandName New-DeviceErrorException `
+                        -MockWith {$true} `
+                        -Verifiable `
+                        -ParameterFilter {$Message -eq $errorMessage}
+
+                    $null = Test-ResourceProperty @Splat
+
+                    Assert-MockCalled -CommandName New-DeviceErrorException -Times 1 `
+                        -ParameterFilter {$Message -eq $errorMessage}
+                }
+            }
+
+            Context 'invoking with invalid IP Address' {
+
+                It 'should throw an AddressFormatError error' {
+                    $Splat = @{
+                        Address = 'NotReal'
+                        InterfaceAlias = 'Ethernet'
+                        AddressFamily = 'IPv4'
+                    }
+                    # $errorId = 'AddressFormatError'
+                    # $errorCategory = [System.Management.Automation.ErrorCategory]::InvalidArgument
+                    # $errorMessage = $($LocalizedData.AddressFormatError) -f $Splat.Address
+                    # $exception = New-Object -TypeName System.InvalidOperationException `
+                    #     -ArgumentList $errorMessage
+                    # $errorRecord = New-Object -TypeName System.Management.Automation.ErrorRecord `
+                    #     -ArgumentList $exception, $errorId, $errorCategory, $null
+
+                    # { Test-ResourceProperty @Splat } | Should Throw $ErrorRecord
+
+                    $errorMessage = $($LocalizedData.AddressFormatError) -f $Splat.Address
+
+                    Mock -CommandName New-InvalidArgumentException `
+                        -MockWith {throw} `
+                        -Verifiable `
+                        -ParameterFilter {$Message -eq $errorMessage}
+
+                    Mock -CommandName New-InvalidArgumentException `
+                        -MockWith {$true} `
+                        -Verifiable
+
+                    $breakvar = $true;
+                    $null = {Test-ResourceProperty @Splat -ErrorAction:SilentlyContinue}
+
+                    Assert-MockCalled -CommandName New-InvalidArgumentException -Times 1 `
+                        -ParameterFilter {$Message -eq $errorMessage}
+                    Assert-MockCalled -CommandName New-InvalidArgumentException -Times 0
+                        $breakvar = $true;
+                }
+            }
+
+            Context 'invoking with IPv4 Address and family mismatch' {
+
+                It 'should throw an AddressMismatchError error' {
+                    $Splat = @{
+                        Address = '192.168.0.1'
+                        InterfaceAlias = 'Ethernet'
+                        AddressFamily = 'IPv6'
+                    }
+
+                    $errorMessage = $($($LocalizedData.AddressIPv4MismatchError) -f $Splat.Address,$Splat.AddressFamily);
+
+                    Mock -CommandName New-InvalidArgumentException `
+                        -MockWith {$true} `
+                        -Verifiable `
+                        -ParameterFilter {$Message -eq $errorMessage}
+
+                    $null = Test-ResourceProperty @Splat
+
+                    Assert-MockCalled -CommandName New-InvalidArgumentException -Times 1 `
+                        -ParameterFilter {$Message -eq $errorMessage}
+                }
+            }
+
+            Context 'invoking with IPv6 Address and family mismatch' {
+
+                It 'should throw an AddressMismatchError error' {
+                    $Splat = @{
+                        Address = 'fe80::'
+                        InterfaceAlias = 'Ethernet'
+                        AddressFamily = 'IPv4'
+                    }
+
+                    $errorMessage = $($($LocalizedData.AddressIPv6MismatchError) -f $Splat.Address,$Splat.AddressFamily);
+
+                    Mock -CommandName New-InvalidArgumentException `
+                        -MockWith {$true} `
+                        -Verifiable `
+                        -ParameterFilter {$Message -eq $errorMessage}
+
+                    $null = Test-ResourceProperty @Splat
+
+                    Assert-MockCalled -CommandName New-InvalidArgumentException -Times 1 `
+                        -ParameterFilter {$Message -eq $errorMessage}
+                }
+            }
+
+            Context 'invoking with valid IPv4 Addresses' {
+
+                It 'should not throw an error' {
+                    $Splat = @{
+                        Address = '192.168.0.1'
+                        InterfaceAlias = 'Ethernet'
+                        AddressFamily = 'IPv4'
+                    }
+                    { Test-ResourceProperty @Splat } | Should Not Throw
+                }
+            }
+
+            Context 'invoking with valid IPv6 Addresses' {
+
+                It 'should not throw an error' {
+                    $Splat = @{
+                        Address = 'fe80:ab04:30F5:002b::1'
+                        InterfaceAlias = 'Ethernet'
+                        AddressFamily = 'IPv6'
+                    }
+                    { Test-ResourceProperty @Splat } | Should Not Throw
+                }
+            }
+        }
     #endregion
 }
 finally

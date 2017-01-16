@@ -123,6 +123,41 @@ function New-InvalidOperationException
 
 <#
     .SYNOPSIS
+        Creates and throws an invalid operation exception
+
+    .PARAMETER Message
+        The message explaining why this error is being thrown
+
+    .PARAMETER ErrorRecord
+        The error record containing the exception that is causing this terminating error
+#>
+function New-DeviceErrorException
+{
+    [CmdletBinding()]
+    param
+    (
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $Message,
+
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $DeviceName
+    )
+
+    $argumentException = New-Object -TypeName 'DeviceError' -ArgumentList @( $Message,
+        $DeviceName )
+    $newObjectParams = @{
+        TypeName = 'System.Management.Automation.ErrorRecord'
+        ArgumentList = @( $argumentException, $DeviceName, 'InvalidArgument', $null )
+    }
+    $errorRecord = New-Object @newObjectParams
+
+    throw $errorRecord
+}
+
+<#
+    .SYNOPSIS
         Retrieves the localized string data based on the machine's culture.
         Falls back to en-US strings if the machine's culture is not supported.
 
@@ -170,4 +205,5 @@ Export-ModuleMember -Function `
     Test-IsNanoServer, `
     New-InvalidArgumentException, `
     New-InvalidOperationException, `
-    Get-LocalizedData
+    Get-LocalizedData, `
+    New-DeviceErrorException

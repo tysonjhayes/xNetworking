@@ -1,20 +1,7 @@
-#region localizeddata
-if (Test-Path "${PSScriptRoot}\${PSUICulture}")
-{
-    Import-LocalizedData `
-        -BindingVariable LocalizedData `
-        -Filename MSFT_xDnsClientGlobalSetting.psd1 `
-        -BaseDirectory "${PSScriptRoot}\${PSUICulture}"
-}
-else
-{
-    #fallback to en-US
-    Import-LocalizedData `
-        -BindingVariable LocalizedData `
-        -Filename MSFT_xDnsClientGlobalSetting.psd1 `
-        -BaseDirectory "${PSScriptRoot}\en-US"
-}
-#endregion
+# Import Localized Data
+$script:localizedData = Get-LocalizedData `
+    -ResourceName 'MSFT_xDnsClientGlobalSetting' `
+    -ResourcePath (Split-Path -Parent $Script:MyInvocation.MyCommand.Path)
 
 <#
     This is an array of all the parameters used by this resource.
@@ -42,7 +29,7 @@ function Get-TargetResource
 
     Write-Verbose -Message ( @(
             "$($MyInvocation.MyCommand): "
-            $($LocalizedData.GettingDnsClientGlobalSettingsMessage)
+            $($script:localizedData.GettingDnsClientGlobalSettingsMessage)
         ) -join '' )
 
     # Get the current Dns Client Global Settings
@@ -83,7 +70,7 @@ function Set-TargetResource
 
     Write-Verbose -Message ( @(
             "$($MyInvocation.MyCommand): "
-            $($LocalizedData.SettingDnsClientGlobalSettingMessage)
+            $($script:localizedData.SettingDnsClientGlobalSettingMessage)
         ) -join '' )
 
     # Get the current Dns Client Global Settings
@@ -104,7 +91,7 @@ function Set-TargetResource
             }
             Write-Verbose -Message ( @(
                 "$($MyInvocation.MyCommand): "
-                $($LocalizedData.DnsClientGlobalSettingUpdateParameterMessage) `
+                $($script:localizedData.DnsClientGlobalSettingUpdateParameterMessage) `
                     -f $parameter.Name,$ParameterNew
                 ) -join '' )
         } # if
@@ -118,7 +105,7 @@ function Set-TargetResource
 
         Write-Verbose -Message ( @(
             "$($MyInvocation.MyCommand): "
-            $($LocalizedData.DnsClientGlobalSettingUpdatedMessage)
+            $($script:localizedData.DnsClientGlobalSettingUpdatedMessage)
             ) -join '' )
     } # if
 } # Set-TargetResource
@@ -146,7 +133,7 @@ function Test-TargetResource
 
     Write-Verbose -Message ( @(
             "$($MyInvocation.MyCommand): "
-            $($LocalizedData.TestingDnsClientGlobalSettingMessage)
+            $($script:localizedData.TestingDnsClientGlobalSettingMessage)
         ) -join '' )
 
     # Flag to signal whether settings are correct
@@ -165,7 +152,7 @@ function Test-TargetResource
             -and (Compare-Object -ReferenceObject $ParameterSource -DifferenceObject $ParameterNew -SyncWindow 0)) {
             Write-Verbose -Message ( @(
                 "$($MyInvocation.MyCommand): "
-                $($LocalizedData.DnsClientGlobalSettingParameterNeedsUpdateMessage) `
+                $($script:localizedData.DnsClientGlobalSettingParameterNeedsUpdateMessage) `
                     -f $parameter.Name,$ParameterSource,$ParameterNew
                 ) -join '' )
             $desiredConfigurationMatch = $false
@@ -174,30 +161,5 @@ function Test-TargetResource
 
     return $DesiredConfigurationMatch
 } # Test-TargetResource
-
-# Helper Functions
-function New-TerminatingError
-{
-    [CmdletBinding()]
-    param
-    (
-        [Parameter(Mandatory)]
-        [String] $ErrorId,
-
-        [Parameter(Mandatory)]
-        [String] $ErrorMessage,
-
-        [Parameter(Mandatory)]
-        [System.Management.Automation.ErrorCategory] $ErrorCategory
-    )
-
-    $exception = New-Object `
-        -TypeName System.InvalidOperationException `
-        -ArgumentList $errorMessage
-    $errorRecord = New-Object `
-        -TypeName System.Management.Automation.ErrorRecord `
-        -ArgumentList $exception, $errorId, $errorCategory, $null
-    $PSCmdlet.ThrowTerminatingError($errorRecord)
-}
 
 Export-ModuleMember -Function *-TargetResource

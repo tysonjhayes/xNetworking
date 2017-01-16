@@ -1,21 +1,14 @@
-data LocalizedData
-{
-    # culture="en-US"
-    ConvertFrom-StringData -StringData @'
-PropertyMismatch          = Property '{0}' does NOT match. Expected '{1}', actual '{2}'.
-CheckingConnectionSuffix  = Checking connection suffix matches '{0}'.
-ResourceInDesiredState    = Resource is in the desired state.
-ResourceNotInDesiredState = Resource is NOT in the desired state.
-SettingConnectionSuffix   = Setting connection suffix '{0}' on interface '{1}'.
-RemovingConnectionSuffix  = Removing connection suffix '{0}' on interface '{1}'.
-'@
-}
+# Import Localized Data
+$localizedData = Get-LocalizedData `
+    -ResourceName 'MSFT_xDnsConnectionSuffix' `
+    -ResourcePath (Split-Path -Parent $Script:MyInvocation.MyCommand.Path)
 
 function Get-TargetResource
 {
     [CmdletBinding()]
     [OutputType([System.Collections.Hashtable])]
-    param (
+    param
+    (
         [Parameter(Mandatory)]
         [ValidateNotNullOrEmpty()]
         [System.String] $InterfaceAlias,
@@ -34,6 +27,7 @@ function Get-TargetResource
         [ValidateSet('Present','Absent')]
         [System.String] $Ensure = 'Present'
     )
+
     $dnsClient = Get-DnsClient -InterfaceAlias $InterfaceAlias -ErrorAction SilentlyContinue;
     $targetResource = @{
         InterfaceAlias = $dnsClient.InterfaceAlias;
@@ -115,9 +109,11 @@ function Test-TargetResource
     {
         Write-Verbose -Message $LocalizedData.ResourceInDesiredState;
     }
-    else {
+    else
+    {
         Write-Verbose -Message $LocalizedData.ResourceNotInDesiredState;
     }
+
     return $inDesiredState;
 }
 
@@ -143,6 +139,7 @@ function Set-TargetResource
         [ValidateSet('Present','Absent')]
         [System.String] $Ensure = 'Present'
     )
+
     $setDnsClientParams = @{
         InterfaceAlias = $InterfaceAlias;
         RegisterThisConnectionsAddress = $RegisterThisConnectionsAddress;
@@ -158,5 +155,6 @@ function Set-TargetResource
         $setDnsClientParams['ConnectionSpecificSuffix'] = '';
         Write-Verbose -Message ($LocalizedData.RemovingConnectionSuffix -f $ConnectionSpecificSuffix, $InterfaceAlias);
     }
+
     Set-DnsClient @setDnsClientParams;
 }

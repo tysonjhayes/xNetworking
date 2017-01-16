@@ -1,28 +1,7 @@
-#######################################################################################
-#  xDefaultGatewayAddress : DSC Resource that will set/test/get the current default gateway
-#  Address, by accepting values among those given in xDefaultGatewayAddress.schema.mof
-#######################################################################################
-
-data LocalizedData
-{
-    # culture="en-US"
-    ConvertFrom-StringData -StringData @'
-GettingDefaultGatewayAddressMessage=Getting the Default Gateway Address.
-ApplyingDefaultGatewayAddressMessage=Applying the Default Gateway Address.
-DefaultGatewayAddressSetToDesiredStateMessage=Default Gateway address was set to the desired state.
-DefaultGatewayRemovedMessage=Default Gateway address has been removed.
-CheckingDefaultGatewayAddressMessage=Checking the Default Gateway Address.
-DefaultGatewayNotMatchMessage=Default gateway does NOT match desired state. Expected "{0}", actual "{1}".
-DefaultGatewayCorrectMessage=Default gateway is correct.
-DefaultGatewayDoesNotExistMessage=Default gateway does not exist. Expected "{0}".
-DefaultGatewayExistsButShouldNotMessage=Default gateway exists but it should not.
-DefaultGatewayExistsAndShouldMessage=Default Gateway does not exist which is correct.
-InterfaceNotAvailableError=Interface "{0}" is not available. Please select a valid interface and try again.
-AddressFormatError=Address "{0}" is not in the correct format. Please correct the Address parameter in the configuration and try again.
-AddressIPv4MismatchError=Address "{0}" is in IPv4 format, which does not match server address family {1}. Please correct either of them in the configuration and try again.
-AddressIPv6MismatchError=Address "{0}" is in IPv6 format, which does not match server address family {1}. Please correct either of them in the configuration and try again.
-'@
-}
+# Import Localized Data
+$localizedData = Get-LocalizedData `
+    -ResourceName 'MSFT_xDefaultGatewayAddress' `
+    -ResourcePath (Split-Path -Parent $Script:MyInvocation.MyCommand.Path)
 
 ######################################################################################
 # The Get-TargetResource cmdlet.
@@ -272,44 +251,26 @@ function Test-ResourceProperty {
     {
         if (-not ([System.Net.IPAddress]::TryParse($Address, [ref]0)))
         {
-            $errorId = 'AddressFormatError'
-            $errorCategory = [System.Management.Automation.ErrorCategory]::InvalidArgument
-            $errorMessage = $($LocalizedData.AddressFormatError) -f $Address
-            $exception = New-Object -TypeName System.InvalidOperationException `
-                -ArgumentList $errorMessage
-            $errorRecord = New-Object -TypeName System.Management.Automation.ErrorRecord `
-                -ArgumentList $exception, $errorId, $errorCategory, $null
-
-            $PSCmdlet.ThrowTerminatingError($errorRecord)
+            New-InvalidArgumentException `
+                -Message $($LocalizedData.AddressFormatError) -f $Address `
+                -ArgumentName 'AddressFormatError'
         }
 
         $detectedAddressFamily = ([System.Net.IPAddress]$Address).AddressFamily.ToString()
         if (($detectedAddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork.ToString()) `
             -and ($AddressFamily -ne 'IPv4'))
         {
-            $errorId = 'AddressMismatchError'
-            $errorCategory = [System.Management.Automation.ErrorCategory]::InvalidArgument
-            $errorMessage = $($LocalizedData.AddressIPv4MismatchError) -f $Address,$AddressFamily
-            $exception = New-Object -TypeName System.InvalidOperationException `
-                -ArgumentList $errorMessage
-            $errorRecord = New-Object -TypeName System.Management.Automation.ErrorRecord `
-                -ArgumentList $exception, $errorId, $errorCategory, $null
-
-            $PSCmdlet.ThrowTerminatingError($errorRecord)
+            New-InvalidArgumentException `
+                -Message $($LocalizedData.AddressIPv4MismatchError) -f $Address,$AddressFamily `
+                -ArgumentName 'AddressMismatchError'
         }
 
         if (($detectedAddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6.ToString()) `
             -and ($AddressFamily -ne 'IPv6'))
         {
-            $errorId = 'AddressMismatchError'
-            $errorCategory = [System.Management.Automation.ErrorCategory]::InvalidArgument
-            $errorMessage = $($LocalizedData.AddressIPv6MismatchError) -f $Address,$AddressFamily
-            $exception = New-Object -TypeName System.InvalidOperationException `
-                -ArgumentList $errorMessage
-            $errorRecord = New-Object -TypeName System.Management.Automation.ErrorRecord `
-                -ArgumentList $exception, $errorId, $errorCategory, $null
-
-            $PSCmdlet.ThrowTerminatingError($errorRecord)
+            New-InvalidArgumentException `
+                -Message $($LocalizedData.AddressIPv6MismatchError) -f $Address,$AddressFamily `
+                -ArgumentName 'AddressMismatchError'
         }
     }
 } # Test-ResourceProperty

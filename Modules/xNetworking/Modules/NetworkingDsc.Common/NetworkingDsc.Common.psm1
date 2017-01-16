@@ -68,5 +68,57 @@ function Convert-CIDRToSubhetMask
     return $Results
 }
 
+function Test-ResourceProperty
+{
+    # Function will check the Address details are valid and do not conflict with
+    # Address family. Ensures interface exists.
+    # If any problems are detected an exception will be thrown.
+    [CmdletBinding()]
+    param
+    (
+        [String]$Address,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String] $InterfaceAlias,
+
+        [ValidateSet('IPv4', 'IPv6')]
+        [String] $AddressFamily = 'IPv4'
+    )
+
+    if ( -not (Get-NetAdapter | Where-Object -Property Name -EQ $InterfaceAlias ))
+    {
+        New-DeviceErrorException `
+            -Message $($($LocalizedData.InterfaceNotAvailableError) -f $InterfaceAlias) `
+            -DeviceName $InterfaceAlias
+    }
+
+    if ( -not ([System.Net.IPAddress]::TryParse($Address, [ref]0)))
+    {
+        $breakvar = $true;
+        New-InvalidArgumentException `
+            -Message $($($LocalizedData.AddressFormatError) -f $Address) `
+            -ArgumentName 'AddressFormatError'
+    }
+
+    $detectedAddressFamily = ([System.Net.IPAddress]$Address).AddressFamily.ToString()
+    if (($detectedAddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork.ToString()) `
+        -and ($AddressFamily -ne 'IPv4'))
+    {
+        New-InvalidArgumentException `
+            -Message $($($LocalizedData.AddressIPv4MismatchError) -f $Address,$AddressFamily) `
+            -ArgumentName 'AddressMismatchError'
+    }
+
+    if (($detectedAddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6.ToString()) `
+        -and ($AddressFamily -ne 'IPv6'))
+    {
+        New-InvalidArgumentException `
+            -Message $($($LocalizedData.AddressIPv6MismatchError) -f $Address) `
+            -ArgumentName 'AddressMismatchError'
+    }
+} # Test-ResourceProperty
+
 Export-ModuleMember -Function `
-    Convert-CIDRToSubhetMask
+    Convert-CIDRToSubhetMask, `
+    Test-ResourceProperty
