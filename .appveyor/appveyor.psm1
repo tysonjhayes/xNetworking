@@ -121,7 +121,7 @@ function Start-AppveyorAfterTestTask
     )
     $nuGetPackageName = "xNetworking." + $env:APPVEYOR_BUILD_VERSION + ".nupkg"
     dir $env:APPVEYOR_BUILD_FOLDER
-    Get-ChildItem -Path "$env:APPVEYOR_BUILD_FOLDER\$nuGetPackageName" | ForEach-Object -Process {
+    Get-ChildItem -Path "$env:APPVEYOR_BUILD_FOLDER" -Filter '.nupkg' | ForEach-Object -Process {
         Push-AppveyorArtifact $_.FullName -FileName $_.Name
     }
 }
